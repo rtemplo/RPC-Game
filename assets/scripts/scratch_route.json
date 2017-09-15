@@ -1,0 +1,17 @@
+// JSON Document
+//the route
+//line is the given name for a route. A route is like a train line or bus route
+//	location = the stops (for example train station name, or bus stop name)
+//	service is true or false, (this indicates whether the stop is being used or to be bypassed)
+//	distance is reserved in case we want to show riders how far they have traveled
+objects with eta representative of the space between the stops. The sequence array is meant to alternate between stops and spaces in order to use 
+{
+	line: "green",
+	sequence: [
+		{location:"Station 1", service: true},
+		{interval:120, dist:1.2},
+		{location:"Station 2", service: true},
+		{interval:180, dist:1.5},
+		{location:"Station 3", service: true}
+	]
+}
