@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Transit Matrix - By Ray Templo</title>
+<title>RPS - By Ray Templo</title>
 <!--Bootstrap and JQueryUI should be mutually exclusive-->
 <!--<link rel="stylesheet" href="assets/css/jquery-ui.css">-->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
@@ -43,9 +43,9 @@
 					<h6 class="card-subtitle mb-2 text-muted">Actions</h6>
 					<p class="card-text">
 						<div class="btn-group-vertical" id="player1-buttons">
-							<button type="button" class="btn btn-secondary">Rock</button>
-							<button type="button" class="btn btn-warning">Paper</button>  							
-							<button type="button" class="btn btn-info">Scissors</button>  											
+							<button type="button" class="btn btn-secondary" data-value="R">Rock</button>
+							<button type="button" class="btn btn-warning" data-value="P">Paper</button>  							
+							<button type="button" class="btn btn-info" data-value="S">Scissors</button>  											
 						</div>
 					</p>
 					<div>Wins: <span id="p1-wins"></span> Losses: <span id="p1-losses"></span></div>
@@ -53,7 +53,8 @@
 			</div>
 		</div>
 		<div class="col-sm-4">
-			<div class="jumbotron d-flex justify-content-center"><h2>Win/Lose</h2></div>
+			<div class="jumbotron d-flex justify-content-center"><h2 id="result-display">Win/Lose</h2></div>
+			<div class="px-2 text-center">Ties: <span id="ties"></span> </div>
 		</div>
 		<div class="col-sm-4 d-flex justify-content-center pb-4">
 			<div class="card" style="width: 20rem;">
@@ -62,9 +63,9 @@
 					<h6 class="card-subtitle mb-2 text-muted">Actions</h6>
 					<p class="card-text">
 						<div class="btn-group-vertical" id="player2-buttons">
-							<button type="button" class="btn btn-secondary">Rock</button>
-							<button type="button" class="btn btn-warning">Paper</button>  							
-							<button type="button" class="btn btn-info">Scissors</button>  											
+							<button type="button" class="btn btn-secondary" data-value="R">Rock</button>
+							<button type="button" class="btn btn-warning" data-value="P">Paper</button>  							
+							<button type="button" class="btn btn-info" data-value="S">Scissors</button>  											
 						</div>
 					</p>
 					<div>Wins: <span id="p2-wins"></span> Losses: <span id="p2-losses"></span></div>
