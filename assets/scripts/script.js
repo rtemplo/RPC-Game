@@ -13,9 +13,7 @@ firebase.initializeApp(config);
 
 var database = firebase.database();
 
-var playerIdx = 0;
-
-var playersObj = {gamewinner:-2,players:[{name:"", choice: "", losses:0, wins: 0}, {name:"", choice: "", losses:0, wins: 0}]};
+var playerIdx = 1;
 
 var ties = 0;
 
@@ -24,93 +22,82 @@ var p2_n, p2_c, p2_w, p2_l;
 
 var gameWinner;
 
-//var connections;
-//var connectionsRef = database.ref("/connections");
-
 //// '.info/connected' is a special location provided by Firebase that is updated
 //// every time the client's connection state changes.
 //// '.info/connected' is a boolean value, true if the client is connected and false if they are not.
-//var connectedRef = database.ref(".info/connected");
-//
-//// When the client's connection state changes...
-//connectedRef.on("value", function(snap) {
-//  // If they are connected..
-//  if (snap.val()) {
-//
-//    // Add user to the connections list.
-//    var con = connectionsRef.push(true);
-//    // Remove user from the connection list when they disconnect.
-//    con.onDisconnect().remove();
-//  }
-//});
-//
-//connectionsRef.on("value", function(snap) {
-//	connections = snap.numChildren()
-//});
+var connectedRef = database.ref(".info/connected");
+var rootRef = database.ref();
+var playersRef = database.ref("/players");
+var messagesRef = database.ref("/messages");
 
 function setPlayer(pname, pidx) {
-	database.ref("/players/" + pidx).update({name:pname});
+	//this has to be here because we need the pidx argument in order to reference the specific player node for actions on disconnect
+	connectedRef.on("value", function(snap) {
+		if (snap.val()) {
+			playersRef.child(pidx).set({name:pname,choice:"",wins:0,losses:0});
+			var playerNode = playersRef.child(pidx);
+			
+			playerNode.onDisconnect().remove();
+			messagesRef.onDisconnect().remove();
+			$("#message-box").val("");
+		}
+	});
 		
 	$("#player-header-name").html(pname);
-	$("#player-header-number").html(pidx + 1);	
+	$("#player-header-number").html(pidx);	
 	
-	if (pidx === 0) {
-		$("#player1-name").html(pname);
-	} else {
-		$("#player2-name").html(pname);
-	}
+	$("#player"+pidx+"-name").html(pname);
 	
 	$("#add-player-layer").hide();
 	$("#player-header-label").show();
-}
-
-function resetUserStats() {
-	//if a player drops out the stats must be rest and the user must wait for a new player to enter the game.
+	
+	$("#player"+pidx+"-buttons button").attr("disabled", false);		
 }
 
 function init() {
-	database.ref().set(playersObj);
-		
 	p1_n = "";
-	p2_n = "";
-
-	p1_c = 0;
-	p2_c = 0;
+	p1_c = "";
 	p1_w = 0;
 	p1_l = 0;
+	
+	p2_n = "";
+	p2_c = "";
 	p2_w = 0;
-	p2_l = 0;	
+	p2_l = 0;
+	
+	gameWinner = -2;
 }
 
-//init routine - should start before document load
-database.ref().once("value", function(snap) {
-	//check to see if the system is initialized - check to see if there is a games node
-	if (!snap.child("players").exists()) {
-		init();
-	} 
+//init routine - should start before document load - should be initial promise
+rootRef.once("value", function(snap) {
+	init();
 	
-	if (snap.child("players/0/name").val() !== "" && snap.child("players/1/name").val() === "") {
-		playerIdx = 1;
+	if (snap.child("players/1/name").exists() && snap.child("players/2/name").exists()) {
+		alert("Sorry the game is full.");
+		window.close();
 	} else {
-		playerIdx = 0;
+		if (snap.child("players/1/name").exists()) {
+			playerIdx = 2;
+		} else {
+			playerIdx = 1;
+		}
 	}
 });
 
 
-
 function updatePageData() {
-	database.ref().once("value", function (snap) {
+	rootRef.once("value", function (snap) {
 		//get the data for your opponent - different set depending on which player you are
-		if (playerIdx === 0) {
-			p2_n = snap.child("/players/1/name").val();
-			p2_c = snap.child("players/1/choice").val();
-			p2_w = snap.child("players/1/wins").val();
-			p2_l = snap.child("players/1/losses").val();
+		if (playerIdx === 1) {
+			p2_n = snap.child("players/2/name").val();
+			p2_c = snap.child("players/2/choice").val();
+			p2_w = snap.child("players/2/wins").val();
+			p2_l = snap.child("players/2/losses").val();
 		} else {
-			p1_n = snap.child("/players/0/name").val();
-			p1_c = snap.child("players/0/choice").val();
-			p1_w = snap.child("players/0/wins").val();
-			p1_l = snap.child("players/0/losses").val();			
+			p1_n = snap.child("players/1/name").val();
+			p1_c = snap.child("players/1/choice").val();
+			p1_w = snap.child("players/1/wins").val();
+			p1_l = snap.child("players/1/losses").val();			
 		}
 
 		if (p1_c !== "" && p2_c !== "") {
@@ -119,7 +106,7 @@ function updatePageData() {
 
 				ties++;
 				//No winner. It's a tie.
-				gameWinner = -1;
+				gameWinner = 0;
 
 			} else {
 
@@ -135,13 +122,13 @@ function updatePageData() {
 						p1_w++;
 						p2_l++;
 
-						gameWinner = 0;
+						gameWinner = 1;
 
 					} else {
 						p1_l++;
 						p2_w++;
 
-						gameWinner = 1;
+						gameWinner = 2;
 						
 					}
 				}
@@ -153,29 +140,31 @@ function updatePageData() {
 
 		} else {
 			//Game is still undecided. One or both players have yet to take their turns.
-			gameWinner = -2;
+			gameWinner = -1;
 		}
 		
-		updateObj = playersObj;
-		updateObj.gamewinner = gameWinner;
-		updateObj.players[0].name = p1_n;
-		updateObj.players[0].choice = p1_c;
-		updateObj.players[0].wins = p1_w;
-		updateObj.players[0].losses = p1_l;
-		
-		updateObj.players[1].name = p2_n;
-		updateObj.players[1].choice = p2_c;
-		updateObj.players[1].wins = p2_w;
-		updateObj.players[1].losses = p2_l;		
-		
-		//update the whole object because too many updates cause too many value change triggers
-		database.ref().set(updateObj);
+	});
+	
+	rootRef.update({
+		gamewinner:gameWinner, 
+		players:{
+			1:{"name":p1_n, "choice":p1_c, "wins":p1_w, "losses":p1_l},
+			2:{"name":p2_n, "choice":p2_c, "wins":p2_w, "losses":p2_l}
+		}
 	});
 	
 }
 
 function updateDisplay() {
 	var gameMsg;
+	
+	if (p1_n === "" || p1_n === undefined || p1_n === null) {
+		p1_n = '<span class="text-muted">Offline</span>';
+	}
+	
+	if (p2_n === "" || p2_n === undefined || p2_n === null) {
+		p2_n = '<span class="text-muted">Offline</span>';
+	}
 	
 	$("#player1-name").html(p1_n);
 	$("#player2-name").html(p2_n);		
@@ -185,25 +174,20 @@ function updateDisplay() {
 
 	$("#p1-losses").html(p1_l);
 	$("#p2-losses").html(p2_l);	
-	
-	
-//	if (p1_c === undefined || p2_c === undefined) {
-//		gameWinner = -2;
-//	}
-	
-	if (gameWinner === 0) {
-		if (playerIdx === 0) {
-			gameMsg = "You win!";
-		} else {
-			gameMsg = "You lose.";
-		}
-	} else if (gameWinner === 1) {
+		
+	if (gameWinner === 1) {
 		if (playerIdx === 1) {
 			gameMsg = "You win!";
 		} else {
 			gameMsg = "You lose.";
 		}
-	} else if (gameWinner === -1) {
+	} else if (gameWinner === 2) {
+		if (playerIdx === 2) {
+			gameMsg = "You win!";
+		} else {
+			gameMsg = "You lose.";
+		}
+	} else if (gameWinner === 0) {
 		gameMsg = "Tie!";
 	} else {
 		gameMsg = "-----";
@@ -212,23 +196,28 @@ function updateDisplay() {
 	$("#result-display").html(gameMsg);
 }
 
-database.ref().on("value", function (snap) {
-	p1_n = snap.child("players/0/name").val();
-	p1_w = snap.child("players/0/wins").val();
-	p1_l = snap.child("players/0/losses").val();
+//var dbRef = database.ref();
+rootRef.on("value", function (snap) {
+	p1_n = snap.child("players/1/name").val();
+	p1_w = snap.child("players/1/wins").val();
+	p1_l = snap.child("players/1/losses").val();
 	
-	p2_n = snap.child("players/1/name").val();	
-	p2_w = snap.child("players/1/wins").val();
-	p2_l = snap.child("players/1/losses").val();
+	p2_n = snap.child("players/2/name").val();	
+	p2_w = snap.child("players/2/wins").val();
+	p2_l = snap.child("players/2/losses").val();
 	
 	gameWinner = snap.child("gamewinner").val();
 	
 	updateDisplay();
+	
+	if (snap.numChildren() === 2) $("#message-send").attr("disabled", false);
+	
 });
 
 $(document).ready(function () {
 	$("#player-header-label").hide();
-	
+	$("button:not(#add-player)").attr("disabled", true);
+		
 	$("#add-player").on("click", function () {
 		var playerName = $("#player-name").val().trim();
 		
@@ -246,9 +235,9 @@ $(document).ready(function () {
 		var playerSide = $(this).parent().attr("id");
 		var actionValue = $(this).attr("data-value");
 		
-		if (playerSide === "player1-buttons" && playerIdx === 0) {
+		if (playerSide === "player1-buttons" && playerIdx === 1) {
 			p1_c = actionValue;
-		} else if (playerSide === "player2-buttons" && playerIdx === 1) {
+		} else if (playerSide === "player2-buttons" && playerIdx === 2) {
 			p2_c = actionValue;
 		}
 		
@@ -258,7 +247,7 @@ $(document).ready(function () {
 	$("#message-send").on("click", function () {
 		var msgHandle;
 		
-		if (playerIdx === 0)
+		if (playerIdx === 1)
 			msgHandle = p1_n;
 		else 
 			msgHandle = p2_n;
@@ -276,7 +265,7 @@ $(document).ready(function () {
 				msg = msgHandle + ": " + msg + "<br><br>";
 			}
 				
-			database.ref("/messages").push({message:msg,dateAdded:firebase.database.ServerValue.TIMESTAMP});
+			messagesRef.push({message:msg,dateAdded:firebase.database.ServerValue.TIMESTAMP});
 			$("#message-input").val("");
 		} else {
 	
@@ -286,7 +275,7 @@ $(document).ready(function () {
 	});
 });
 
-database.ref("/messages").orderByChild("dateAdded").limitToLast(1).on("child_added", function(crackle) {
+messagesRef.orderByChild("dateAdded").limitToLast(1).on("child_added", function(crackle) {
 	var mb = $("#message-box");
 	
 	mb.append(crackle.val().message);
@@ -295,5 +284,11 @@ database.ref("/messages").orderByChild("dateAdded").limitToLast(1).on("child_add
 		mb.scrollTop(mb[0].scrollHeight - mb.height());
 	}	
 });
+
+function disableF5(e) { if ((e.which || e.keyCode) == 116) e.preventDefault(); };
+// To disable f5
+$(document).on("keydown", disableF5);
+
+document.addEventListener('contextmenu', event => event.preventDefault());
 
 
