@@ -1,3 +1,13 @@
 @charset "utf-8";
 /* CSS Document */
 
+#message-box {
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	padding: 3px;
+	height: 180px;
+	max-height: 180px;
+	overflow: auto;
+	margin-bottom: 5px;
+	text-align: left;
+}

@@ -262,7 +262,7 @@ $(document).ready(function () {
 			var msg = $("#message-input").val();
 
 			if (msg !== "" && msg !== undefined) {
-				msg = msgHandle + ": " + msg + "<br><br>";
+				msg = msgHandle + ": " + msg + "<br>";
 			}
 				
 			messagesRef.push({message:msg,dateAdded:firebase.database.ServerValue.TIMESTAMP});
